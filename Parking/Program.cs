@@ -13,8 +13,4 @@ namespace Parking
 
         }
     }
-
-    public static class Settings
-    {
-    }
 }
