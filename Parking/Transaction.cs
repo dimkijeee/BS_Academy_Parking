@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Parking
@@ -19,7 +20,7 @@ namespace Parking
         }
         public void Show()
         {
-            Console.WriteLine($"Transaction: {TimeOfTransaction} Car: {CarId} Withdrawn funds: {WithdrawnFunds}");
+            Console.WriteLine($"\tTransaction: {TimeOfTransaction} / Car: {CarId} / Withdrawn funds: {WithdrawnFunds}");
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Parking
@@ -14,7 +15,7 @@ namespace Parking
         private static int IdGenerator { get; set; }
 
         public int Id { get; } 
-        public int Balance { get; set; }
+        public int Balance { get; private set; }
         public CarType TypeOfCar { get; }
         public Car(int balance = 0, CarType typeOfCar = CarType.Passenger)
         {

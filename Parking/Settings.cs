@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Parking
@@ -17,13 +18,13 @@ namespace Parking
         private static int timeOut = 3;
         private static Dictionary<CarType, int> pricesForParking = new Dictionary<CarType, int>
         {
-            { CarType.Bus, 5 },
-            { CarType.Truck, 4 },
+            { CarType.Bus, 2 },
+            { CarType.Truck, 5 },
             { CarType.Passenger, 3 },
-            { CarType.Motorcycle, 2 }
+            { CarType.Motorcycle, 1 }
         };
         private static int parkingSpace = 30;
-        private static double fine = 5;
+        private static int fine = 5;
 
         public static int TimeOut
         {
@@ -67,7 +68,7 @@ namespace Parking
                 parkingSpace = value;
             }
         }
-        public static double Fine
+        public static int Fine
         {
             get
             {
@@ -85,7 +86,7 @@ namespace Parking
         //This method works like constructor. We can use this method just once. 
         //If settings changed method returns true, else - false.
         public static bool SetSettings(int _timeOut, Dictionary<CarType, int> _pricesForParking,
-            int _parkingSpace, double _fine)
+            int _parkingSpace, int _fine)
         {
             //If method gets values 0 or null, fields set as default values for parking.
             if (isInitialized == false)
