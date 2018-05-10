@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Parking
 {
@@ -17,9 +18,16 @@ namespace Parking
         public static Parking Instance { get { return lazy.Value; } }
 
         private static bool isInitialized = false;
-        private bool isRunning = false;
-        Task Logging;
-        Task WorkOfParking;
+
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        private CancellationToken cancellationToken;
+        private Task Logging;
+        private Task WorkOfParking;
+        private Task InteractionWithUser;
+
+        private FileStream fileStream;
+        private StreamReader streamReader;
+        private StreamWriter streamWriter;
 
         //Initialize object (Made for convenience). This method using when we creating Parking.
         public static bool Initialzie()
@@ -46,29 +54,32 @@ namespace Parking
 
         private void Work()
         {
+            //fileStream = new FileStream(@"..\Transactions.log", FileMode.Open, FileAccess.ReadWrite);
+            //streamReader = new StreamReader(fileStream);
+            //streamWriter = new StreamWriter(fileStream);
             Logging = new Task(() => 
             {
                 TimerCallback callBack = new TimerCallback(OutputSumOfTransactionsToFile);
-                Timer timer = new Timer(callBack, null, 0, 10000);
+                Timer timer = new Timer(callBack, null, 0, 5000);
             });
             WorkOfParking = new Task(() =>
             {
                 TimerCallback callBack = new TimerCallback(WithdrawMoneyForParkingPlace);
                 Timer timer = new Timer(callBack, null, 0, Settings.TimeOut*1000);
             });
+            InteractionWithUser = new Task(() =>
+            {
+                Menu.Run();
+            });
             Logging.Start();
             WorkOfParking.Start();
-            //Task InteractionWithUser = new Task(() =>
-            //{
-            //    Menu.Run();
-            //});
-
+            InteractionWithUser.Start();
         }
         public void Start()
         {
             if (isInitialized)
             {
-                isRunning = true;
+                cancellationToken = cancellationTokenSource.Token;
                 Work();
             }
             else
@@ -80,7 +91,9 @@ namespace Parking
         {
             if (isInitialized)
             {
-                isRunning = false;
+                cancellationTokenSource.Cancel();
+                Logging.Dispose();
+                WorkOfParking.Dispose();
             }
             else
             {
@@ -145,22 +158,28 @@ namespace Parking
             }
             return false;
         }
-        public void WithdrawMoneyForParkingPlace(object obj)
+        private void WithdrawMoneyForParkingPlace(object obj)
         {
-            foreach (var car in Cars)
+            if (!cancellationToken.IsCancellationRequested)
             {
-                if (car.Balance >= Settings.PricesForParking[car.TypeOfCar])
+                int valueForWithdraw = 0;
+                foreach (var car in Cars)
                 {
-                    car.Withdraw(Settings.PricesForParking[car.TypeOfCar]);
-                }
-                else
-                {
-                    car.Withdraw(Settings.PricesForParking[car.TypeOfCar] * Settings.Fine);
+                    if (car.Balance >= Settings.PricesForParking[car.TypeOfCar])
+                    {
+                        valueForWithdraw = Settings.PricesForParking[car.TypeOfCar];
+                    }
+                    else
+                    {
+                        valueForWithdraw = Settings.PricesForParking[car.TypeOfCar] * Settings.Fine;
+                    }
+                    car.Withdraw(valueForWithdraw);
+                    Transactions.Add(new Transaction(DateTime.Now, car.Id, valueForWithdraw));
                 }
             }
-            if(isRunning==false)
+            else
             {
-                WorkOfParking.Wait();
+                cancellationTokenSource.Cancel();
             }
         }
         public int GetEarnedMoneyAtTheLastMinute()
@@ -178,10 +197,20 @@ namespace Parking
 
         private void OutputSumOfTransactionsToFile(object obj)
         {
-            Console.WriteLine("Temporary method.");
-            if(isRunning==false)
+            if (!cancellationToken.IsCancellationRequested)
             {
-                Logging.Wait();
+                int sumOfTransactions = 0;
+                foreach (var transaction in Transactions)
+                {
+                    sumOfTransactions += transaction.WithdrawnFunds;
+                }
+
+
+
+            }
+            else
+            {
+                cancellationTokenSource.Cancel();
             }
         }
 

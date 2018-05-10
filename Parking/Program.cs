@@ -18,8 +18,9 @@ namespace Parking
             Parking.Instance.AddCar(25, CarType.Truck);
             Parking.Instance.AddCar(10, CarType.Bus);
             Parking.Instance.Show();
-            System.Threading.Thread.Sleep(10000);
+            System.Threading.Thread.Sleep(6000);
             Parking.Instance.Show();
+            System.Threading.Thread.Sleep(18000);
             Parking.Instance.End();
             Console.ReadKey();
         }
