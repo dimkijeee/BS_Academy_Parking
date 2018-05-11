@@ -18,7 +18,7 @@ namespace Parking
         public static Parking Instance { get { return lazy.Value; } }
 
         private static bool isInitialized = false;
-
+        
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private CancellationToken cancellationToken;
         private Task Logging;
@@ -66,13 +66,17 @@ namespace Parking
             Logging.Start();
             WorkOfParking.Start();
         }
+
+        //Get started with parking. 
         public void Start()
         {
             if (isInitialized)
             {
                 cancellationToken = cancellationTokenSource.Token;
+                //fileStream created for clearing file "Transactions.log" before start of program.
                 FileStream fileStream = new FileStream(@"E:\BSA\Parking\Parking\Transactions.log", FileMode.Create);
                 fileStream.Close();
+                //It set up multi-threading.
                 Work();
             }
             else
@@ -80,6 +84,7 @@ namespace Parking
                 throw new InvalidOperationException("You cant start working! Parking is not initialized!");
             }
         }
+        //Finish working with parking
         public void End()
         {
             if (isInitialized)
@@ -159,6 +164,7 @@ namespace Parking
             return false;
         }
 
+        //Two multi-thread methods. They work in different streams.
         private void WithdrawMoneyForParkingPlace(object obj)
         {
             lock (locker)

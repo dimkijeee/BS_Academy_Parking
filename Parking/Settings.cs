@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 
 namespace Parking
 {
-
-    //Threat-safe class.
     public static class Settings
     {
         private static object locker = new object();

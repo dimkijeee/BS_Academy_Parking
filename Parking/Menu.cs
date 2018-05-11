@@ -19,6 +19,7 @@ namespace Parking
             };
         private static int parkingSpace = 30;
         private static int fine = 5;
+        //Initialize settings and create parking.
         public static void Start()
         {
             bool actions = true;
@@ -104,6 +105,7 @@ namespace Parking
             Parking.Instance.Start();
         }
 
+        //Use for reading integer value by Console
         private static int InputValue()
         {
             bool choise = true;
@@ -123,6 +125,7 @@ namespace Parking
             return value;
         }
 
+        //User-interface.
         public static void Run()
         {
             bool actions = true;
