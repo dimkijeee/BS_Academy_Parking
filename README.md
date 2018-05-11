@@ -17,7 +17,8 @@ Settings has method SetSettings(...) to set up info about parking. In code descr
 Class Parking use programing-pattern singleton. Work of parking is multi-thread. It contains 
 fields, properties and methods which are neccesary in task. Before first use we need to initialize
 parking by using special method - Initialize. During execution parking use 3 threads - Logging(Work with file "Transactions.log"), 
-WorkOfParking(Withdraw money for parking), Main thread - for interaction with user.
+WorkOfParking(Withdraw money for parking), Main thread - for interaction with user. Method Start starting work of parking.
+Method End ending work of parking. Method Work set up multi-threading.
 **Class Menu.**
 Class Menu created as user-interface. Encapsulates work of parking.
 
