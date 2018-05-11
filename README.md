@@ -20,3 +20,6 @@ parking by using special method - Initialize. During execution parking use 3 thr
 WorkOfParking(Withdraw money for parking), Main thread - for interaction with user.
 **Class Menu.**
 Class Menu created as user-interface. Encapsulates work of parking.
+
+##Please, change paths to file "Transactions.log" in this places: 
+File "Parking.cs", lines 74, 202, 253.
