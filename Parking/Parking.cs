@@ -23,9 +23,8 @@ namespace Parking
         private CancellationToken cancellationToken;
         private Task Logging;
         private Task WorkOfParking;
-        private Task InteractionWithUser;
+        private static object locker = new object();
 
-        private FileStream fileStream;
         private StreamReader streamReader;
         private StreamWriter streamWriter;
 
@@ -54,32 +53,26 @@ namespace Parking
 
         private void Work()
         {
-            //fileStream = new FileStream(@"..\Transactions.log", FileMode.Open, FileAccess.ReadWrite);
-            //streamReader = new StreamReader(fileStream);
-            //streamWriter = new StreamWriter(fileStream);
             Logging = new Task(() => 
             {
                 TimerCallback callBack = new TimerCallback(OutputSumOfTransactionsToFile);
-                Timer timer = new Timer(callBack, null, 0, 5000);
+                Timer timer = new Timer(callBack, null, 0, 60000);
             });
             WorkOfParking = new Task(() =>
             {
                 TimerCallback callBack = new TimerCallback(WithdrawMoneyForParkingPlace);
                 Timer timer = new Timer(callBack, null, 0, Settings.TimeOut*1000);
             });
-            InteractionWithUser = new Task(() =>
-            {
-                Menu.Run();
-            });
             Logging.Start();
             WorkOfParking.Start();
-            InteractionWithUser.Start();
         }
         public void Start()
         {
             if (isInitialized)
             {
                 cancellationToken = cancellationTokenSource.Token;
+                FileStream fileStream = new FileStream(@"E:\BSA\Parking\Parking\Transactions.log", FileMode.Create);
+                fileStream.Close();
                 Work();
             }
             else
@@ -102,7 +95,7 @@ namespace Parking
         }
         public bool AddCar(Car car)
         {
-            if (car.Balance > 0)
+            if (car.Balance > 0 && CountOfFreePlaces()!=0)
             {
                 Cars.Add(car);
                 return true;
@@ -114,7 +107,7 @@ namespace Parking
         }
         public bool AddCar(int balance, CarType carType)
         {
-            if (balance > 0)
+            if (balance > 0 && CountOfFreePlaces()!=0)
             {
                 Cars.Add(new Car(balance, carType));
                 return true;
@@ -135,14 +128,21 @@ namespace Parking
                     break;
                 }
             }
-            if(toRemove!=null && toRemove.Balance>=0)
+            if(toRemove.Balance >= 0)
             {
                 Cars.Remove(toRemove);
                 return true;
             }
             else
             {
-                return false;
+                if(toRemove == null)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
         //Refills balance for car with Id - id. If succesfull - returns true, else - false.
@@ -158,30 +158,59 @@ namespace Parking
             }
             return false;
         }
+
         private void WithdrawMoneyForParkingPlace(object obj)
         {
-            if (!cancellationToken.IsCancellationRequested)
+            lock (locker)
             {
-                int valueForWithdraw = 0;
-                foreach (var car in Cars)
+                if (!cancellationToken.IsCancellationRequested)
                 {
-                    if (car.Balance >= Settings.PricesForParking[car.TypeOfCar])
+                    Logging.Wait();
+                    int valueForWithdraw = 0;
+                    foreach (var car in Cars)
                     {
-                        valueForWithdraw = Settings.PricesForParking[car.TypeOfCar];
+                        if (car.Balance >= Settings.PricesForParking[car.TypeOfCar])
+                        {
+                            valueForWithdraw = Settings.PricesForParking[car.TypeOfCar];
+                        }
+                        else
+                        {
+                            valueForWithdraw = Settings.PricesForParking[car.TypeOfCar] * Settings.Fine;
+                        }
+                        car.Withdraw(valueForWithdraw);
+                        Transactions.Add(new Transaction(DateTime.Now, car.Id, valueForWithdraw));
+                        Balance += valueForWithdraw;
                     }
-                    else
-                    {
-                        valueForWithdraw = Settings.PricesForParking[car.TypeOfCar] * Settings.Fine;
-                    }
-                    car.Withdraw(valueForWithdraw);
-                    Transactions.Add(new Transaction(DateTime.Now, car.Id, valueForWithdraw));
+                }
+                else
+                {
+                    cancellationTokenSource.Cancel();
                 }
             }
-            else
+        }
+        private void OutputSumOfTransactionsToFile(object obj)
+        {
+            lock (locker)
             {
-                cancellationTokenSource.Cancel();
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    int sumOfTransactions = 0;
+                    foreach (var transaction in Transactions)
+                    {
+                        sumOfTransactions += transaction.WithdrawnFunds;
+                    }
+                    streamWriter = new StreamWriter(@"E:\BSA\Parking\Parking\Transactions.log", true);
+                    streamWriter.WriteLine($"{DateTime.Now} / Sum of transactions: {sumOfTransactions}");
+                    streamWriter.Close();
+                    Transactions.Clear();
+                }
+                else
+                {
+                    cancellationTokenSource.Cancel();
+                }
             }
         }
+
         public int GetEarnedMoneyAtTheLastMinute()
         {
             int sum = 0;
@@ -195,25 +224,6 @@ namespace Parking
         public int CountOfFreePlaces() => Settings.ParkingSpace - Cars.Count;
         public int CountOfOccupiedPlaces() => Cars.Count;
 
-        private void OutputSumOfTransactionsToFile(object obj)
-        {
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                int sumOfTransactions = 0;
-                foreach (var transaction in Transactions)
-                {
-                    sumOfTransactions += transaction.WithdrawnFunds;
-                }
-
-
-
-            }
-            else
-            {
-                cancellationTokenSource.Cancel();
-            }
-        }
-
         public void Show()
         {
             Console.WriteLine("\n-----Parking-----\n");
@@ -224,14 +234,6 @@ namespace Parking
                 car.Show();
             }
             Console.WriteLine("");
-            Console.WriteLine("Transactions:");
-            foreach(var transaction in Transactions)
-            {
-                Console.Write(".\t");
-                transaction.Show();
-            }
-            Console.WriteLine("");
-            Console.WriteLine($"Balance: {Balance}.\n");
         }
         public void ShowSettings()
         {
@@ -239,11 +241,22 @@ namespace Parking
         }
         public void ShowTransactionsAtTheLastMinute()
         {
-            
+            foreach(var transaction in Transactions)
+            {
+                transaction.Show();
+            }
         }
         public void ShowAllTransactions()
         {
-
+            Console.WriteLine("All transactions:\n");
+            streamReader = new StreamReader(@"E:\BSA\Parking\Parking\Transactions.log");
+            string transaction = streamReader.ReadLine();
+            while(transaction!=null)
+            {
+                Console.WriteLine($"{transaction}");
+                transaction = streamReader.ReadLine();
+            }
+            streamReader.Close();
         }
     }
 }
