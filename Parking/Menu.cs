@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Parking
 {
@@ -19,6 +20,7 @@ namespace Parking
             };
         private static int parkingSpace = 30;
         private static int fine = 5;
+        //Initialize settings and create parking.
         public static void Start()
         {
             bool actions = true;
@@ -104,6 +106,7 @@ namespace Parking
             Parking.Instance.Start();
         }
 
+        //Use for reading integer value by Console
         private static int InputValue()
         {
             bool choise = true;
@@ -123,6 +126,7 @@ namespace Parking
             return value;
         }
 
+        //User-interface.
         public static void Run()
         {
             bool actions = true;
@@ -178,25 +182,24 @@ namespace Parking
                         break;
                     case 2:
                         Console.WriteLine("Enter id of car:");
-                        string id = Console.ReadLine();
-                        try
+                        int id = InputValue();
+                        ResultsOfTheFunction isSuccesfull = Parking.Instance.TakeCar(id);
+                        if(isSuccesfull == ResultsOfTheFunction.Succesfull)
                         {
-                            bool isSuccesfull = Parking.Instance.TakeCar(int.Parse(id));
-                            if(isSuccesfull)
-                            {
-                                Console.WriteLine("Car took succesfull!");
-                            }
-                            else
+                            Console.WriteLine("Car took succesfull!");
+                        }
+                        else
+                        {
+                            if (isSuccesfull == ResultsOfTheFunction.Unsuccesfull_NegativeBalance)
                             {
                                 Console.WriteLine("Sorry, but you cant take your car! Please, fill your balance!");
                             }
-                            Console.ReadKey();
+                            else
+                            {
+                                Console.WriteLine("The car is absent in the parking.");
+                            }
                         }
-                        catch
-                        {
-                            Console.WriteLine("Error! Invalid input data! Moving to main menu...");
-                            Console.ReadKey();
-                        }
+                        Console.ReadKey();
                         break;
                     case 3:
                         Console.WriteLine("Enter id of car and sum of money through spaces:");
@@ -222,11 +225,23 @@ namespace Parking
                         Console.ReadKey();
                         break;
                     case 6:
-                        Parking.Instance.ShowTransactionsAtTheLastMinute();
+                        foreach (var transaction in Parking.Instance.Transactions)
+                        {
+                            transaction.Show();
+                        }
                         Console.ReadKey();
                         break;
                     case 7:
-                        Parking.Instance.ShowAllTransactions();
+                        Console.WriteLine("All transactions:\n");
+                        using (var streamReader = new StreamReader(Settings.pathToFile))
+                        {
+                            string transaction = streamReader.ReadLine();
+                            while (transaction != null)
+                            {
+                                Console.WriteLine($"{transaction}");
+                                transaction = streamReader.ReadLine();
+                            }
+                        }
                         Console.ReadKey();
                         break;
                     case 8:
@@ -238,11 +253,18 @@ namespace Parking
                         Console.ReadKey();
                         break;
                     case 10:
-                        Parking.Instance.ShowSettings();
+                        Settings.Show();
                         Console.ReadKey();
                         break;
                     case 11:
-                        Parking.Instance.Show();
+                        Console.WriteLine("\n-----Parking-----\n");
+                        Console.WriteLine("Cars:");
+                        foreach (var car in Parking.Instance.Cars)
+                        {
+                            Console.Write(".\t");
+                            car.Show();
+                        }
+                        Console.WriteLine("");
                         Console.ReadKey();
                         break;
                     case 12:
