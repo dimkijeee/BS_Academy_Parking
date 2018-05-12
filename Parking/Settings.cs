@@ -13,6 +13,8 @@ namespace Parking
         private static bool isInitialized = false;  //This field means that we didn`t use method SetSettings, 
         //and all properties and fields initialized by default.
 
+        public static string pathToFile = @"e:\bsa\parking\parking\transactions.log";
+
         private static int timeOut = 3;
         private static Dictionary<CarType, int> pricesForParking = new Dictionary<CarType, int>
         {
