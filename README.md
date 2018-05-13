@@ -23,4 +23,4 @@ Method End ending work of parking. Method Work set up multi-threading.
 Class Menu created as user-interface. Encapsulates work of parking.
 
 ##Please, change paths to file "Transactions.log" in this places: 
-File "Parking.cs", lines 74, 202, 253.
+File "Settings.cs", line 16 field pathToFile.
